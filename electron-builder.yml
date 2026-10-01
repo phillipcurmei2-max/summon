@@ -1,0 +1,29 @@
+appId: com.summon.launcher
+productName: Summon
+copyright: Copyright © 2026 Phillip Curmei
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - out/**/*
+  - resources/icon.png
+  - resources/tray.png
+  - resources/tray@2x.png
+  - package.json
+
+win:
+  icon: resources/icon.ico
+  target:
+    - nsis
+  # A fixed name lets the website link to .../releases/latest/download/Summon-Setup.exe
+  artifactName: ${productName}-Setup.${ext}
+
+nsis:
+  oneClick: true
+  perMachine: false
+  createDesktopShortcut: false
+  createStartMenuShortcut: true
+  shortcutName: Summon
+  runAfterFinish: true

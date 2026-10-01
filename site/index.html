@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Summon — your whole PC, one keystroke away</title>
+<meta name="description" content="Summon is a free, lightning-fast command bar for Windows. Press Alt+Space to launch apps, do maths, convert units, search your clipboard, pick emoji, set timers and control your PC." />
+<meta property="og:title" content="Summon — your whole PC, one keystroke away" />
+<meta property="og:description" content="A free, lightning-fast command bar for Windows. Press Alt+Space and just type." />
+<meta property="og:image" content="assets/og.png" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content="#0a0a0f" />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-2: #101017;
+    --surface: #15151d;
+    --surface-2: #1b1b24;
+    --line: rgb(255 255 255 / 0.08);
+    --line-2: rgb(255 255 255 / 0.14);
+    --fg: #f4f4f7;
+    --muted: #a3a3b0;
+    --faint: #6f6f7c;
+    --accent: #8b6dff;
+    --brand: linear-gradient(115deg, #8f6bff 0%, #d94fd0 55%, #ff8a3d 100%);
+    --glow-a: rgb(143 107 255 / 0.35);
+    --glow-b: rgb(255 138 61 / 0.22);
+    /* The demo bar mirrors the app's dark theme. */
+    --panel: #18181c;
+    --panel-line: rgb(255 255 255 / 0.075);
+    --row-active: rgb(255 255 255 / 0.08);
+    --row-hover: rgb(255 255 255 / 0.04);
+    --kbd: rgb(255 255 255 / 0.08);
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #fbfaff;
+      --bg-2: #f3f1fb;
+      --surface: #ffffff;
+      --surface-2: #f6f5fb;
+      --line: rgb(20 10 60 / 0.09);
+      --line-2: rgb(20 10 60 / 0.16);
+      --fg: #15131f;
+      --muted: #5b5870;
+      --faint: #8c89a0;
+      --accent: #6d4aff;
+      --glow-a: rgb(143 107 255 / 0.22);
+      --glow-b: rgb(255 138 61 / 0.16);
+      --panel: #fafafb;
+      --panel-line: rgb(0 0 0 / 0.08);
+      --row-active: rgb(0 0 0 / 0.065);
+      --row-hover: rgb(0 0 0 / 0.035);
+      --kbd: rgb(0 0 0 / 0.07);
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="dark"] { color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.6 Inter, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; }
+  .wrap { width: min(1160px, 100% - 32px); margin-inline: auto; }
+  .grad { background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  kbd, .kbd {
+    font: 500 12px/1 Inter, system-ui, sans-serif;
+    display: inline-grid; place-items: center;
+    min-width: 22px; height: 22px; padding: 0 6px;
+    border-radius: 6px; background: var(--kbd); color: var(--muted);
+  }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(160%) blur(14px);
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; letter-spacing: -0.01em; }
+  .brand img { width: 28px; height: 28px; }
+  nav .links { display: flex; gap: 24px; margin-left: auto; font-size: 14px; color: var(--muted); }
+  nav .links a { text-decoration: none; }
+  nav .links a:hover { color: var(--fg); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 48px; padding: 0 22px; border-radius: 12px;
+    font: 600 15px/1 Inter, system-ui, sans-serif; text-decoration: none; cursor: pointer; border: 0;
+    transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { color: #fff; background: var(--brand); box-shadow: 0 10px 30px -8px rgb(217 79 208 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.25); }
+  .btn-primary:hover { box-shadow: 0 16px 40px -8px rgb(217 79 208 / 0.7), inset 0 1px 0 rgb(255 255 255 / 0.25); }
+  .btn-ghost { color: var(--fg); background: var(--surface); border: 1px solid var(--line-2); }
+  .btn-ghost:hover { background: var(--surface-2); }
+  .btn-sm { height: 36px; padding: 0 14px; border-radius: 10px; font-size: 14px; }
+  .btn svg { width: 18px; height: 18px; }
+
+  /* ---------- hero ---------- */
+  .hero { position: relative; padding: 88px 0 40px; text-align: center; }
+  .hero::before {
+    content: ""; position: absolute; inset: -120px 0 auto; height: 720px; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(520px 320px at 30% 30%, var(--glow-a), transparent 70%),
+      radial-gradient(460px 300px at 72% 40%, var(--glow-b), transparent 70%);
+    filter: blur(20px);
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px 6px 8px; border-radius: 999px;
+    border: 1px solid var(--line-2); background: color-mix(in srgb, var(--surface) 70%, transparent);
+    font-size: 13px; color: var(--muted);
+  }
+  .pill b { background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .02em; }
+  h1 {
+    font-size: clamp(42px, 7.2vw, 84px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 800;
+    margin: 22px auto 20px; max-width: 14ch;
+  }
+  .lede { font-size: clamp(17px, 2vw, 20px); color: var(--muted); max-width: 640px; margin: 0 auto 32px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .meta { margin-top: 16px; font-size: 13px; color: var(--faint); }
+  .meta span + span::before { content: "·"; margin: 0 8px; }
+  .mobile-note { display: none; margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+  /* ---------- demo ---------- */
+  .stage {
+    position: relative; margin: 56px auto 0; max-width: 980px; padding: 56px 36px;
+    border-radius: 28px; border: 1px solid var(--line);
+    background:
+      radial-gradient(600px 300px at 15% 0%, rgb(143 107 255 / 0.45), transparent 70%),
+      radial-gradient(500px 320px at 100% 100%, rgb(255 138 61 / 0.35), transparent 70%),
+      radial-gradient(400px 260px at 60% 30%, rgb(217 79 208 / 0.3), transparent 70%),
+      #1a1330;
+    overflow: hidden;
+  }
+  .stage::after { /* a hint of taskbar, so it reads as a Windows desktop */
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 30px;
+    background: rgb(20 16 36 / 0.7); border-top: 1px solid rgb(255 255 255 / 0.06);
+  }
+  .keys-float {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; align-items: center; font-size: 12px; color: rgb(255 255 255 / 0.6);
+  }
+  .keys-float .kbd { background: rgb(255 255 255 / 0.12); color: #fff; }
+
+  #demo {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 760px; height: 470px; margin: 0 auto;
+    display: flex; flex-direction: column; text-align: left;
+    background: var(--panel); color: var(--fg);
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 30px 80px -20px rgb(0 0 0 / 0.65), 0 0 0 1px rgb(255 255 255 / 0.09);
+    font-family: "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.4;
+  }
+  .d-head { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 16px; border-bottom: 1px solid var(--panel-line); flex-shrink: 0; }
+  .d-lead { display: flex; align-items: center; gap: 10px; color: var(--faint); }
+  .d-lead > svg { width: 19px; height: 19px; }
+  .d-back { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; border: 0; background: var(--row-active); color: var(--muted); cursor: pointer; }
+  .d-back svg { width: 16px; height: 16px; }
+  .d-chip { font-size: 12px; font-weight: 600; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+  .d-input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: 18px; }
+  .d-input::placeholder { color: var(--faint); }
+  .d-hint { font-size: 12px; color: var(--faint); white-space: nowrap; }
+  #demo.is-auto .d-hint::after { content: " ✎"; }
+  .d-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 8px; scrollbar-width: thin; }
+  .d-sec { padding: 12px 12px 4px; font-size: 12px; font-weight: 500; color: var(--faint); }
+  .d-row { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 9px; cursor: default; }
+  .d-row.is-sel { background: var(--row-active); }
+  .d-ico { width: 22px; height: 22px; flex-shrink: 0; border-radius: 6px; display: grid; place-items: center; overflow: hidden; }
+  .d-ico svg { width: 13px; height: 13px; }
+  .d-ico b { color: #fff; font-size: 12px; font-weight: 700; }
+  .d-swatch i, .d-bigswatch i { display: block; width: 100%; height: 100%; }
+  .d-swatch { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.15); }
+  .d-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .d-title em { font-style: normal; font-weight: 700; color: var(--accent); }
+  .d-sub { color: var(--faint); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+  .d-acc { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; padding-left: 8px; }
+  .d-card {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
+    margin: 4px 4px; padding: 16px 20px; border-radius: 12px;
+    border: 1px solid var(--panel-line); background: var(--row-hover); cursor: default;
+  }
+  .d-card.is-sel { border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: var(--row-active); }
+  .d-card-side { text-align: center; min-width: 0; }
+  .d-big { display: block; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: "Segoe UI Variable Display", "Segoe UI", Inter, sans-serif; }
+  .d-strong { font-weight: 700; }
+  .d-card small { display: block; margin-top: 4px; font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .d-card-arrow { width: 18px; height: 18px; color: var(--faint); }
+  .d-bigswatch { display: block; width: 80px; height: 36px; margin: 0 auto; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.15); }
+  .d-emoji { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; padding: 0 4px; }
+  .d-emoji button { aspect-ratio: 1; border: 0; border-radius: 9px; background: transparent; font-size: 26px; line-height: 1; cursor: pointer; }
+  .d-emoji button:hover { background: var(--row-hover); }
+  .d-emoji button.is-sel { background: var(--row-active); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent); }
+  .d-empty { display: grid; place-items: center; height: 100%; color: var(--muted); }
+  .d-foot { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-top: 1px solid var(--panel-line); font-size: 12px; color: var(--muted); flex-shrink: 0; }
+  .d-status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .d-status.d-toast { color: var(--fg); font-weight: 600; }
+  .d-primary { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--fg); white-space: nowrap; }
+  .d-primary kbd { min-width: 20px; height: 20px; font-size: 11px; }
+  .demo-caption { margin: 18px auto 0; max-width: 640px; text-align: center; font-size: 14px; color: var(--muted); }
+  .demo-caption code { font: 500 13px "JetBrains Mono", Consolas, monospace; color: var(--fg); background: var(--surface); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; }
+
+  /* ---------- sections ---------- */
+  section { padding: 110px 0 0; }
+  .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h2 { font-size: clamp(32px, 4.6vw, 52px); line-height: 1.08; letter-spacing: -0.035em; font-weight: 800; margin: 10px 0 14px; max-width: 18ch; }
+  .sub { color: var(--muted); font-size: 18px; max-width: 620px; margin: 0; }
+
+  .bento { margin-top: 48px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .card {
+    position: relative; overflow: hidden;
+    grid-column: span 2; padding: 26px; border-radius: 20px;
+    background: var(--surface); border: 1px solid var(--line);
+  }
+  .card.wide { grid-column: span 3; }
+  .card.full { grid-column: span 4; }
+  .card h3 { margin: 16px 0 6px; font-size: 19px; letter-spacing: -0.015em; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .card .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; }
+  .card .ic svg { width: 19px; height: 19px; }
+  .mini {
+    margin-top: 20px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-2);
+    padding: 10px; font-size: 13px;
+  }
+  .mini .r { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 8px; border-radius: 8px; }
+  .mini .r.sel { background: var(--row-active); }
+  .mini .r .t { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mini .r .a { color: var(--faint); font-size: 12px; }
+  .mini .sq { width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0; display: grid; place-items: center; color: #fff; font-size: 10px; font-weight: 700; }
+  .mini .eq { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; font-size: 18px; }
+  .mini .eq b { font-size: 22px; }
+  .mini .eq span { color: var(--faint); }
+  .mono { font-family: "JetBrains Mono", Consolas, monospace; font-size: 13px; }
+  .emoji-row { display: flex; gap: 6px; font-size: 26px; margin-top: 18px; }
+  .emoji-row span { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); }
+  .emoji-row span:first-child { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chips span { font-size: 13px; padding: 5px 10px; border-radius: 8px; background: var(--bg-2); border: 1px solid var(--line); color: var(--muted); }
+  .chips span b { color: var(--fg); font-weight: 600; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12px; margin-right: 4px; }
+
+  .privacy {
+    margin-top: 110px; padding: 56px; border-radius: 28px; border: 1px solid var(--line);
+    background:
+      radial-gradient(500px 240px at 0% 0%, var(--glow-a), transparent 70%),
+      var(--surface);
+    display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center;
+  }
+  .privacy h2 { margin-top: 0; }
+  .stats { display: grid; gap: 14px; }
+  .stat { display: flex; align-items: baseline; gap: 14px; padding: 16px 20px; border-radius: 14px; background: var(--bg-2); border: 1px solid var(--line); }
+  .stat b { font-size: 30px; letter-spacing: -0.03em; min-width: 2.6ch; }
+  .stat span { color: var(--muted); font-size: 15px; }
+
+  .shortcuts { margin-top: 44px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 48px; }
+  .sc { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .sc span:first-child { color: var(--muted); }
+  .sc .ks { display: flex; gap: 5px; flex-shrink: 0; }
+
+  .faq { margin-top: 36px; max-width: 820px; }
+  details { border-bottom: 1px solid var(--line); }
+  summary { cursor: pointer; list-style: none; padding: 20px 0; font-weight: 600; font-size: 17px; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--faint); font-weight: 400; font-size: 22px; line-height: 1; transition: transform .2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { margin: -6px 0 20px; color: var(--muted); max-width: 70ch; }
+
+  .final { margin: 120px 0 0; text-align: center; padding: 80px 24px; border-radius: 28px; position: relative; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+  .final::before { content: ""; position: absolute; inset: 0; background: radial-gradient(500px 260px at 50% 110%, var(--glow-a), transparent 70%), radial-gradient(400px 200px at 80% 0%, var(--glow-b), transparent 70%); pointer-events: none; }
+  .final > * { position: relative; }
+  .final h2 { margin: 18px auto 12px; }
+  .final .sub { margin: 0 auto 30px; }
+  .final img { width: 72px; height: 72px; filter: drop-shadow(0 12px 30px rgb(217 79 208 / 0.45)); }
+
+  footer { margin-top: 80px; padding: 32px 0 48px; border-top: 1px solid var(--line); color: var(--faint); font-size: 14px; }
+  footer .wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+  footer .links { margin-left: auto; display: flex; gap: 20px; }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--fg); }
+
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    html { scroll-behavior: auto; }
+  }
+
+  @media (max-width: 900px) {
+    .bento { grid-template-columns: 1fr 1fr; }
+    .card, .card.wide, .card.full { grid-column: span 1; }
+    .card.full { grid-column: span 2; }
+    .privacy { grid-template-columns: 1fr; padding: 36px; }
+    .shortcuts { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    nav .links a:not(.btn) { display: none; }
+    .hero { padding-top: 56px; }
+    .stage { padding: 40px 10px 44px; border-radius: 20px; }
+    #demo { height: 430px; }
+    .d-sub, .d-hint { display: none; }
+    .d-emoji { grid-template-columns: repeat(7, 1fr); }
+    .d-big { font-size: 17px; }
+    .d-card { padding: 12px; gap: 8px; }
+    .bento { grid-template-columns: 1fr; }
+    .card.full { grid-column: span 1; }
+    .privacy { padding: 26px; }
+    .mobile-note { display: block; }
+    footer .links { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/icon.png" alt="" /> Summon</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary btn-sm" data-download href="https://github.com/phillipcurmei2-max/summon/releases/latest/download/Summon-Setup.exe">Download</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+  <header class="hero wrap">
+    <span class="pill"><b>NEW</b> Free for Windows 10 &amp; 11</span>
+    <h1>Your whole PC, <span class="grad">one keystroke away.</span></h1>
+    <p class="lede">Summon is a lightning-fast command bar for Windows. Press <kbd>Alt</kbd> <kbd>Space</kbd>, type a few letters, hit Enter. Launch apps, do maths, convert units, dig up something you copied last week — without touching the mouse.</p>
+    <div class="cta">
+      <a class="btn btn-primary" data-download href="https://github.com/phillipcurmei2-max/summon/releases/latest/download/Summon-Setup.exe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+        Download for Windows
+      </a>
+      <a class="btn btn-ghost" href="#try">Try it right here</a>
+    </div>
+    <div class="meta"><span>Version 0.1.0</span><span>106 MB</span><span>No account</span><span>Open source</span></div>
+    <div class="mobile-note">Summon is a Windows app — but the demo below works on your phone.</div>
+
+    <div class="stage reveal" id="try">
+      <div class="keys-float"><span class="kbd">Alt</span>+<span class="kbd">Space</span> <span>pressed</span></div>
+      <div id="demo"></div>
+    </div>
+    <p class="demo-caption">That’s Summon’s real search engine, running in your browser. Click it and type anything — <code>vsc</code>, <code>sqrt(2)*100</code>, <code>72f in c</code>, <code>:tada</code>, <code>ask why is the sky blue</code>.</p>
+  </header>
+
+  <section id="features" class="wrap">
+    <div class="eyebrow">Everything, instantly</div>
+    <h2>One bar that replaces a dozen clicks.</h2>
+    <p class="sub">Stop hunting through the Start menu, opening Calculator, or scrolling back through chats for that thing you copied. Summon does it where you already are.</p>
+
+    <div class="bento">
+      <div class="card full reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#9b7bff,#6d4aff)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></span>
+        <h3>Launch anything in two keystrokes</h3>
+        <p>Every app on your PC — desktop and Store — plus the files you opened recently. Type the start of a name, any word in it, or just the initials. Summon learns what you reach for and puts it first.</p>
+        <div class="mini">
+          <div class="r sel"><span class="sq" style="background:linear-gradient(135deg,#3ea6ff,#0065a9)">V</span><span class="t"><b style="color:var(--accent)">V</b>isual <b style="color:var(--accent)">S</b>tudio <b style="color:var(--accent)">C</b>ode</span><span class="a">Application</span></div>
+          <div class="r"><span class="sq" style="background:linear-gradient(135deg,#1ed760,#169c46)">S</span><span class="t">Spotify</span><span class="a">Application</span></div>
+          <div class="r"><span class="sq" style="background:linear-gradient(135deg,#ffd35c,#e8a300)">Q</span><span class="t">Q3 Report.xlsx <span style="color:var(--faint)">~\Documents</span></span><span class="a">Recent File</span></div>
+        </div>
+      </div>
+      <div class="card reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#9b7bff,#6d4aff)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M8 6h8M16 14v4M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg></span>
+        <h3>Maths as you type</h3>
+        <p>Percentages, powers, roots, trig. The answer appears before you finish.</p>
+        <div class="mini"><div class="eq"><span class="mono">20% of 150 + 2^8</span><b>286</b></div></div>
+      </div>
+      <div class="card wide reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#8f6bff,#d94fd0)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
+        <h3>Clipboard history that’s actually searchable</h3>
+        <p>Everything you copy, kept on your PC and searchable by any word. Pick one and it’s pasted straight into the app you were using. Password managers are skipped automatically.</p>
+        <div class="mini">
+          <div class="r"><span class="sq" style="background:linear-gradient(135deg,#5ab0ff,#2f6fed)">↗</span><span class="t">https://github.com/phillipcurmei2-max/summon</span><span class="a">2 min ago</span></div>
+          <div class="r sel"><span class="sq" style="background:linear-gradient(135deg,#a1a1aa,#63636e)">T</span><span class="t">Meeting moved to <b style="color:var(--accent)">Thursday</b> 3pm — same room</span><span class="a">1 h ago</span></div>
+          <div class="r"><span class="sq" style="background:#8B6DFF"></span><span class="t">#8B6DFF</span><span class="a">yesterday</span></div>
+        </div>
+      </div>
+      <div class="card wide reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#4fe0d0,#0f9e9a)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2"/></svg></span>
+        <h3>Convert anything</h3>
+        <p>Length, weight, temperature, volume, speed, data, time and area — plus colours in HEX, RGB and HSL.</p>
+        <div class="chips"><span><b>10 km to miles</b> 6.21 mi</span><span><b>72f in c</b> 22.2 °C</span><span><b>3 cups to ml</b> 720 ml</span><span><b>1 gib in mb</b> 1,073.74 MB</span><span><b>#ff5c8a</b> rgb(255, 92, 138)</span></div>
+      </div>
+      <div class="card reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#ffd84d,#f5a300)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></span>
+        <h3>Emoji in a blink</h3>
+        <p>Type <span class="mono">:</span> and a word. Enter pastes it.</p>
+        <div class="emoji-row"><span>🎉</span><span>🥳</span><span>🎊</span><span>💃</span><span>🎈</span></div>
+      </div>
+      <div class="card reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#ffb057,#f06d1f)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg></span>
+        <h3>Timers &amp; reminders</h3>
+        <p><span class="mono">timer 25m focus</span> or <span class="mono">remind me in 10 min to stretch</span>. You get a notification when it’s up.</p>
+      </div>
+      <div class="card reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#5ab0ff,#2f6fed)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+        <h3>Control your PC</h3>
+        <p>Lock, sleep, restart, toggle dark mode, take a screenshot, empty the bin. Destructive ones always ask twice.</p>
+      </div>
+      <div class="card wide reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#ff7a7a,#e0344b)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/></svg></span>
+        <h3>Search the web without opening a browser first</h3>
+        <p>Start with a keyword to jump straight to results — or type a web address to open it.</p>
+        <div class="chips"><span><b>yt</b> YouTube</span><span><b>gh</b> GitHub</span><span><b>wiki</b> Wikipedia</span><span><b>maps</b> Google Maps</span><span><b>r</b> Reddit</span><span><b>ask</b> Claude</span></div>
+      </div>
+      <div class="card wide reveal">
+        <span class="ic" style="background:linear-gradient(135deg,#a1a1aa,#63636e)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"><path d="M10 8h.01M12 12h.01M14 8h.01M16 12h.01M18 8h.01M6 8h.01M7 16h10M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg></span>
+        <h3>Built for the keyboard</h3>
+        <p>Every result has more to offer: press <kbd>Ctrl</kbd> <kbd>K</kbd> to run an app as administrator, open its file location, copy a path, or paste instead of copy.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="privacy reveal" id="privacy">
+      <div>
+        <div class="eyebrow">Private by design</div>
+        <h2>Your PC. Your data. Full stop.</h2>
+        <p class="sub">Summon doesn’t have an account system, a server, or analytics. Your clipboard history is a file on your own disk that you can clear with one click — and anything a password manager copies is never recorded.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><b class="grad">0</b><span>accounts, sign-ups or email addresses</span></div>
+        <div class="stat"><b class="grad">0</b><span>analytics, trackers or telemetry</span></div>
+        <div class="stat"><b class="grad">100%</b><span>of your searches stay on this PC</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="wrap" id="shortcuts">
+    <div class="eyebrow">Cheat sheet</div>
+    <h2>Eight keys to learn. That’s it.</h2>
+    <div class="shortcuts">
+      <div class="sc"><span>Open or close Summon</span><span class="ks"><kbd>Alt</kbd><kbd>Space</kbd></span></div>
+      <div class="sc"><span>Run the highlighted result</span><span class="ks"><kbd>↵</kbd></span></div>
+      <div class="sc"><span>Move through results</span><span class="ks"><kbd>↑</kbd><kbd>↓</kbd></span></div>
+      <div class="sc"><span>Secondary action</span><span class="ks"><kbd>Ctrl</kbd><kbd>↵</kbd></span></div>
+      <div class="sc"><span>All actions for a result</span><span class="ks"><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
+      <div class="sc"><span>Open file location</span><span class="ks"><kbd>Ctrl</kbd><kbd>O</kbd></span></div>
+      <div class="sc"><span>Settings</span><span class="ks"><kbd>Ctrl</kbd><kbd>,</kbd></span></div>
+      <div class="sc"><span>Back, clear, or close</span><span class="ks"><kbd>Esc</kbd></span></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="faq">
+    <div class="eyebrow">Questions</div>
+    <h2>Good to know.</h2>
+    <div class="faq">
+      <details>
+        <summary>Is Summon really free?</summary>
+        <p>Yes. It’s free and open source under the MIT licence. There’s no trial, no ads, and nothing to sign up for.</p>
+      </details>
+      <details>
+        <summary>Windows says “Windows protected your PC”. Is it safe?</summary>
+        <p>Summon is brand new and isn’t code-signed yet, so Microsoft Defender SmartScreen hasn’t seen enough downloads to recognise it. Click <b>More info → Run anyway</b> to install. If Smart App Control is switched on, Windows may block unsigned apps entirely until a signed release is available. All of the source code is on GitHub for anyone to read.</p>
+      </details>
+      <details>
+        <summary>Alt + Space doesn’t open Summon.</summary>
+        <p>Another app (often PowerToys Run) already uses that shortcut. Summon will tell you when it can’t claim it — right-click the tray icon, open Settings, and record any shortcut you like.</p>
+      </details>
+      <details>
+        <summary>Which versions of Windows does it support?</summary>
+        <p>64-bit Windows 10 and Windows 11.</p>
+      </details>
+      <details>
+        <summary>Does it slow my PC down?</summary>
+        <p>Summon waits quietly in the system tray and only scans your apps when it starts and every so often after that. It checks the clipboard for new text a couple of times a second, which is a tiny amount of work. You can turn clipboard history off in Settings.</p>
+      </details>
+      <details>
+        <summary>How do I uninstall it?</summary>
+        <p>Open Windows Settings → Apps → Installed apps, find Summon and choose Uninstall. To remove your clipboard history too, delete the <span class="mono">%APPDATA%\Summon</span> folder.</p>
+      </details>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="final reveal">
+      <img src="assets/icon.png" alt="" />
+      <h2>Stop clicking around. <span class="grad">Summon it.</span></h2>
+      <p class="sub">Free for Windows 10 &amp; 11. Installs in seconds, lives in your tray.</p>
+      <a class="btn btn-primary" data-download href="https://github.com/phillipcurmei2-max/summon/releases/latest/download/Summon-Setup.exe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+        Download Summon
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top" style="font-size:15px"><img src="assets/icon.png" alt="" style="width:22px;height:22px" /> Summon</a>
+    <span>Made by Phillip Curmei · MIT licence</span>
+    <div class="links">
+      <a href="https://github.com/phillipcurmei2-max/summon">GitHub</a>
+      <a href="https://github.com/phillipcurmei2-max/summon/releases">Releases</a>
+      <a href="https://github.com/phillipcurmei2-max/summon/issues">Report a bug</a>
+    </div>
+  </div>
+</footer>
+
+<script src="demo.js" defer></script>
+<script>
+  // Fade sections in as they scroll into view.
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+  }, { threshold: 0.12 })
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
+</script>
+</body>
+</html>

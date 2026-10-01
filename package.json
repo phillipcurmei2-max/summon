@@ -1,0 +1,47 @@
+{
+  "name": "summon",
+  "productName": "Summon",
+  "version": "0.1.0",
+  "description": "Summon — a lightning-fast command bar for Windows. Launch apps, calculate, convert, search your clipboard and control your PC from one keystroke.",
+  "author": "Phillip Curmei",
+  "license": "MIT",
+  "main": "./out/main/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test": "node --experimental-transform-types --no-warnings --test tests/lib.test.ts",
+    "smoke": "electron-vite build && node scripts/smoke-test.mjs",
+    "icon": "python scripts/make-icon.py",
+    "package": "electron-vite build && electron-builder",
+    "package:dir": "electron-vite build && electron-builder --dir",
+    "site": "node scripts/build-site.mjs",
+    "test:notify": "node scripts/notify-test.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "5.2",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "lucide-react": "^1.48.0",
+    "playwright-core": "^1.63.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/phillipcurmei2-max/summon.git"
+  },
+  "homepage": "https://phillipcurmei2-max.github.io/summon/"
+}
